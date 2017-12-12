@@ -75,16 +75,16 @@ void showExampleDialog(entry::AppI* _app, const char* _errorText)
 	char temp[1024];
 	bx::snprintf(temp, BX_COUNTOF(temp), "Example: %s", _app->getName() );
 
-	ImGui::SetNextWindowPos(
-		  ImVec2(10.0f, 50.0f)
-		, ImGuiCond_FirstUseEver
-		);
-	ImGui::SetNextWindowSize(
-		  ImVec2(300.0f, 200.0f)
-		, ImGuiCond_FirstUseEver
-		);
+// 	ImGui::SetNextWindowPos(
+// 		  ImVec2(10.0f, 50.0f)
+// 		, ImGuiCond_FirstUseEver
+// 		);
+// 	ImGui::SetNextWindowSize(
+// 		  ImVec2(300.0f, 200.0f)
+// 		, ImGuiCond_FirstUseEver
+// 		);
 
-	ImGui::Begin(temp);
+	//ImGui::Begin(temp);
 
 	ImGui::TextWrapped("%s", _app->getDescription() );
 	ImGui::Separator();
@@ -387,5 +387,5 @@ void showExampleDialog(entry::AppI* _app, const char* _errorText)
 		}
 	}
 
-	ImGui::End();
+	//ImGui::End();
 }

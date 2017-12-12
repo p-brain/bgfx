@@ -29,6 +29,8 @@
 
 namespace ImGui
 {
+	static int s_containerIdx = 0;
+
 	struct DockContext
 	{
 		enum Slot_
@@ -249,7 +251,7 @@ namespace ImGui
 			new_dock->setActive();
 			new_dock->status = Status_Float;
 			new_dock->pos = ImVec2(0, 0);
-			new_dock->size = GetIO().DisplaySize;
+			new_dock->size = GetIO().DisplaySize / 4;
 			new_dock->opened = opened;
 			new_dock->first = true;
 			new_dock->last_frame = 0;
@@ -383,10 +385,12 @@ namespace ImGui
 			}
 			else
 			{
-				SetNextWindowPos(ImVec2(0, 0));
+				SetNextWindowPos(ImVec2(-20000, 0));
 				SetNextWindowSize(displaySize);
 			}
+
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+
 			Begin("###DockPanel", NULL, flags);
 			splits();
 
@@ -825,36 +829,74 @@ namespace ImGui
 			}
 			else
 			{
-				Dock* container = (Dock*)MemAlloc(sizeof(Dock));
-				IM_PLACEMENT_NEW(container) Dock();
-				m_docks.push_back(container);
-				container->children[0] = &dest->getFirstTab();
-				container->children[1] = &dock;
-				container->next_tab = NULL;
-				container->prev_tab = NULL;
-				container->parent = dest->parent;
-				container->size = dest->size;
-				container->pos = dest->pos;
-				container->status = Status_Docked;
-				container->label = ImStrdup("");
+
+				char str[32];
+				sprintf(str, "ctn%d", s_containerIdx);
+				s_containerIdx++;
+
+				Dock &container = getDock(str, false);
+
+				container.children[0] = &dest->getFirstTab();
+				container.children[1] = &dock;
+				container.next_tab = nullptr;
+				container.prev_tab = nullptr;
+				container.parent = dest->parent;
+				container.size = dest->size;
+				container.pos = dest->pos;
+				container.status = Status_Docked;
 
 				if (!dest->parent)
 				{
 				}
 				else if (&dest->getFirstTab() == dest->parent->children[0])
 				{
-					dest->parent->children[0] = container;
+					dest->parent->children[0] = &container;
 				}
 				else
 				{
-					dest->parent->children[1] = container;
+					dest->parent->children[1] = &container;
 				}
 
-				dest->setParent(container);
-				dock.parent = container;
+				dest->setParent(&container);
+				dock.parent = &container;
 				dock.status = Status_Docked;
 
-				setDockPosSize(*dest, dock, dock_slot, *container);
+				setDockPosSize(*dest, dock, dock_slot, container);
+
+
+
+
+
+// 				Dock* container = (Dock*)MemAlloc(sizeof(Dock));
+// 				IM_PLACEMENT_NEW(container) Dock();
+// 				m_docks.push_back(container);
+// 				container->children[0] = &dest->getFirstTab();
+// 				container->children[1] = &dock;
+// 				container->next_tab = NULL;
+// 				container->prev_tab = NULL;
+// 				container->parent = dest->parent;
+// 				container->size = dest->size;
+// 				container->pos = dest->pos;
+// 				container->status = Status_Docked;
+// 				container->label = ImStrdup("");
+// 
+// 				if (!dest->parent)
+// 				{
+// 				}
+// 				else if (&dest->getFirstTab() == dest->parent->children[0])
+// 				{
+// 					dest->parent->children[0] = container;
+// 				}
+// 				else
+// 				{
+// 					dest->parent->children[1] = container;
+// 				}
+// 
+// 				dest->setParent(container);
+// 				dock.parent = container;
+// 				dock.status = Status_Docked;
+
+//				setDockPosSize(*dest, dock, dock_slot, *container);
 			}
 			dock.setActive();
 		}
@@ -979,6 +1021,7 @@ namespace ImGui
 					doUndock(dock);
 					dock.status = Status_Dragged;
 				}
+
 				return ret;
 			}
 
@@ -1044,10 +1087,116 @@ namespace ImGui
 			return -1;
 		}
 
+
 		Dock* getDockByIndex(int idx)
 		{
 			return idx < 0 ? NULL : m_docks[(int)idx];
 		}
+
+
+		// Load/Save
+
+		void save()
+		{
+			FILE *fp = fopen("app.layout", "w");
+			fprintf(fp, "docks %d\n\n", m_docks.size());
+			for (int i = 0; i < m_docks.size(); ++i) {
+				Dock& dock = *m_docks[i];
+		
+				fprintf(fp, "index    %d\n", i);
+				fprintf(fp, "label    %s\n", dock.label);
+				fprintf(fp, "x        %d\n", (int)dock.pos.x);
+				fprintf(fp, "y        %d\n", (int)dock.pos.y);
+				fprintf(fp, "size_x   %d\n", (int)dock.size.x);
+				fprintf(fp, "size_y   %d\n", (int)dock.size.y);
+				fprintf(fp, "status   %d\n", (int)dock.status);
+				fprintf(fp, "active   %d\n", dock.active ? 1 : 0);
+				fprintf(fp, "opened   %d\n", dock.opened ? 1 : 0);
+				fillLocation(dock);
+				fprintf(fp, "location %s\n", strlen(dock.location) ? dock.location : "-1");
+				fprintf(fp, "child0   %d\n", getDockIndex(dock.children[0]));
+				fprintf(fp, "child1   %d\n", getDockIndex(dock.children[1]));
+				fprintf(fp, "prev_tab %d\n", getDockIndex(dock.prev_tab));
+				fprintf(fp, "next_tab %d\n", getDockIndex(dock.next_tab));
+				fprintf(fp, "parent   %d\n\n", getDockIndex(dock.parent));
+			}
+			fclose(fp);
+
+		}
+
+
+		void load()
+		{
+			for (int i = 0; i < m_docks.size(); ++i)
+			{
+				m_docks[i]->~Dock();
+				MemFree(m_docks[i]);
+			}
+			m_docks.clear();
+	
+			FILE *fp = fopen("app.layout", "r");
+	
+			if (fp) {
+				int ival;
+				char str2[64];
+				fscanf(fp, "docks %d", &ival);
+				printf("%d docks\n", ival);
+	
+				for (int i = 0; i < ival; i++) {
+					Dock *new_dock = (Dock *) MemAlloc(sizeof(Dock));
+					IM_PLACEMENT_NEW(new_dock) Dock();
+					m_docks.push_back(new_dock);
+				}
+	
+				for (int i = 0; i < ival; i++) {
+					int id, id1, id2, id3, id4, id5;
+					int st;
+					int b1, b2;
+					char lab[32];
+					
+					fscanf(fp, "%s %d", str2, &id);
+					fscanf(fp, "%s %[^\n]s", str2, &lab[0]);
+					fscanf(fp, "%s %f", str2, &m_docks[id]->pos.x);
+					fscanf(fp, "%s %f", str2, &m_docks[id]->pos.y);
+					fscanf(fp, "%s %f", str2, &m_docks[id]->size.x);
+					fscanf(fp, "%s %f", str2, &m_docks[id]->size.y);
+					fscanf(fp, "%s %d", str2, &st);
+					fscanf(fp, "%s %d", str2, &b1);
+					fscanf(fp, "%s %d", str2, &b2);
+					fscanf(fp, "%s %s", str2, &m_docks[id]->location[0]);
+					fscanf(fp, "%s %d", str2, &id1);
+					fscanf(fp, "%s %d", str2, &id2);
+					fscanf(fp, "%s %d", str2, &id3);
+					fscanf(fp, "%s %d", str2, &id4);
+					fscanf(fp, "%s %d", str2, &id5);
+	
+					m_docks[id]->label = strdup(lab);
+					m_docks[id]->id = ImHash(m_docks[id]->label,0);
+					
+					m_docks[id]->children[0] = getDockByIndex(id1);
+					m_docks[id]->children[1] = getDockByIndex(id2);
+					m_docks[id]->prev_tab = getDockByIndex(id3);
+					m_docks[id]->next_tab = getDockByIndex(id4);
+					m_docks[id]->parent = getDockByIndex(id5);
+					m_docks[id]->status = (Status_)st;
+					m_docks[id]->active = b1;
+					m_docks[id]->opened = b2;
+
+					if (m_docks[id]->isContainer())
+					{
+						s_containerIdx++;
+					}
+					
+					tryDockToStoredLocation(*m_docks[id]);
+				}
+	
+				fclose(fp);
+			}
+			printf("done\n"); fflush(stdout);
+	
+		}
+
+
 	};
 
 	static DockContext* s_dock = NULL;
@@ -1084,5 +1233,16 @@ namespace ImGui
 	{
 		s_dock->setDockActive();
 	}
+
+	void SaveDock()
+	{
+		s_dock->save();
+	}
+	
+	void LoadDock()
+	{
+		s_dock->load();
+	}
+
 
 } // namespace ImGui

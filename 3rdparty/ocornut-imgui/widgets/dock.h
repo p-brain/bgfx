@@ -1,3 +1,5 @@
+
+
 namespace ImGui
 {
 	///
@@ -14,6 +16,12 @@ namespace ImGui
 
 	///
 	IMGUI_API void EndDock();
+
+	///
+	IMGUI_API void SaveDock();
+
+	///
+	IMGUI_API void LoadDock();
 
 	///
 	IMGUI_API void SetDockActive();

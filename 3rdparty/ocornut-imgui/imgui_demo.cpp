@@ -180,12 +180,12 @@ void ImGui::ShowTestWindow(bool* p_open)
     if (no_resize)    window_flags |= ImGuiWindowFlags_NoResize;
     if (no_collapse)  window_flags |= ImGuiWindowFlags_NoCollapse;
     ImGui::SetNextWindowSize(ImVec2(550,680), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin("ImGui Demo", p_open, window_flags))
-    {
-        // Early out if the window is collapsed, as an optimization.
-        ImGui::End();
-        return;
-    }
+//     if (!ImGui::Begin("ImGui Demo", p_open, window_flags))
+//     {
+//         // Early out if the window is collapsed, as an optimization.
+//         ImGui::End();
+//         return;
+//     }
 
     //ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.65f);    // 2/3 of the space for widget and 1/3 for labels
     ImGui::PushItemWidth(-140);                                 // Right align, keep 140 pixels for labels
@@ -1848,7 +1848,7 @@ void ImGui::ShowTestWindow(bool* p_open)
         }
     }
 
-    ImGui::End();
+    //ImGui::End();
 }
 
 void ImGui::ShowStyleEditor(ImGuiStyle* ref)
