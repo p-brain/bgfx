@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2017 Branimir Karadzic. All rights reserved.
+ * Copyright 2011-2018 Branimir Karadzic. All rights reserved.
  * License: https://github.com/bkaradzic/bgfx/blob/master/LICENSE
  */
 
@@ -1378,7 +1378,6 @@ namespace bgfx
 		/// Set compute image from texture.
 		///
 		/// @param[in] _stage Texture unit.
-		/// @param[in] _sampler Program sampler.
 		/// @param[in] _handle Texture handle.
 		/// @param[in] _mip Mip level.
 		/// @param[in] _access Texture access. See `Access::Enum`.
@@ -1388,7 +1387,6 @@ namespace bgfx
 		///
 		void setImage(
 			  uint8_t _stage
-			, UniformHandle _sampler
 			, TextureHandle _handle
 			, uint8_t _mip
 			, Access::Enum _access
@@ -1943,7 +1941,7 @@ namespace bgfx
 	///
 	/// @param[in] _x, _y 2D position from top-left.
 	/// @param[in] _attr Color palette. Where top 4-bits represent index of background, and bottom
-	///   4-bits represent foreground color from standard VGA text palette.
+	///   4-bits represent foreground color from standard VGA text palette (ANSI escape codes).
 	/// @param[in] _format `printf` style format.
 	///
 	/// @attention C99 equivalent is `bgfx_dbg_text_printf`.
@@ -1960,7 +1958,7 @@ namespace bgfx
 	///
 	/// @param[in] _x, _y 2D position from top-left.
 	/// @param[in] _attr Color palette. Where top 4-bits represent index of background, and bottom
-	///   4-bits represent foreground color from standard VGA text palette.
+	///   4-bits represent foreground color from standard VGA text palette (ANSI escape codes).
 	/// @param[in] _format `printf` style format.
 	/// @param[in] _argList additional arguments for format string
 	///
@@ -3714,7 +3712,6 @@ namespace bgfx
 	/// Set compute image from texture.
 	///
 	/// @param[in] _stage Texture unit.
-	/// @param[in] _sampler Program sampler.
 	/// @param[in] _handle Texture handle.
 	/// @param[in] _mip Mip level.
 	/// @param[in] _access Texture access. See `Access::Enum`.
@@ -3724,7 +3721,6 @@ namespace bgfx
 	///
 	void setImage(
 		  uint8_t _stage
-		, UniformHandle _sampler
 		, TextureHandle _handle
 		, uint8_t _mip
 		, Access::Enum _access
@@ -3798,7 +3794,7 @@ namespace bgfx
 	/// @attention Destination texture must be created with `BGFX_TEXTURE_BLIT_DST` flag.
 	/// @attention Availability depends on: `BGFX_CAPS_TEXTURE_BLIT`.
 	/// @attention C99 equivalent is `bgfx_blit`.
-	/// 	
+	///
 	void blit(
 		  ViewId _id
 		, TextureHandle _dst
